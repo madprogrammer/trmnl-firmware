@@ -7,7 +7,7 @@
 #include "trmnl_log.h"
 
 static unsigned long wait_for_button_release(unsigned long start_time) {
-  pinMode(PIN_INTERRUPT, INPUT);
+  pinMode(PIN_INTERRUPT, BUTTON_PIN_MODE);
   bool hold_buzzer_fired = false;
   while (digitalRead(PIN_INTERRUPT) == LOW && millis() - start_time < BUTTON_SOFT_RESET_TIME) {
     if (!hold_buzzer_fired && millis() - start_time >= BUTTON_HOLD_TIME) {
@@ -58,7 +58,7 @@ static ButtonPressResult wait_for_second_press(unsigned long start_time) {
 ButtonPressResult read_button_presses() {
   auto time_start = millis();
   Log_info("Button time=%lu: start", time_start);
-  pinMode(PIN_INTERRUPT, INPUT);
+  pinMode(PIN_INTERRUPT, BUTTON_PIN_MODE);
   if (digitalRead(PIN_INTERRUPT) == HIGH) {
     if (time_start < 2000) {
       Log_info("Button: already released at start (GPIO wakeup), waiting for second press");

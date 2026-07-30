@@ -87,6 +87,16 @@
 #define EPD_DC_PIN   4
 #define EPD_BUSY_PIN 6
 
+#elif defined(BOARD_FIREBEETLE2_ESP32E)
+   // BYOD: DFRobot FireBeetle 2 ESP32-E (DFR0654) + DESPI-C02 + Waveshare 7.5" B&W
+   // DESPI signal -> FireBeetle silkscreen -> ESP32 GPIO
+#define EPD_SCK_PIN  18 // SCK -> SCK
+#define EPD_MOSI_PIN 23 // SDI -> MO (MOSI)
+#define EPD_CS_PIN   13 // CS  -> D7
+#define EPD_RST_PIN  21 // RES -> SDA
+#define EPD_DC_PIN   22 // D/C -> SCL
+#define EPD_BUSY_PIN 14 // BUSY -> D6
+
 #elif defined(BOARD_WAVESHARE_ESP32_DRIVER)
    // Pin definition for Waveshare ESP32 Driver Board
 #define EPD_SCK_PIN  13

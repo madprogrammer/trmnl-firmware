@@ -103,6 +103,15 @@
 #elif defined(BOARD_ESP32_C5_DEVKITC_1)
 #define PIN_INTERRUPT 28
 #define DEVICE_MODEL  "gen-2"
+#elif defined(BOARD_FIREBEETLE2_ESP32E)
+// BYOD: DFRobot FireBeetle 2 ESP32-E (DFR0654) + DESPI-C02 + Waveshare 7.5" B&W
+#define DEVICE_MODEL  "og" // 800x480 1-bit, same image format as TRMNL OG
+#define PIN_INTERRUPT 27   // on-board button labeled "27" (refresh / WiFi-reset)
+// GPIO27 has no external pull-up: read the button with the internal one so a
+// floating pin doesn't read LOW and get mistaken for a long reset-press, and
+// retain that pull-up across deep sleep so it doesn't cause a spurious wake.
+#define BUTTON_PIN_MODE INPUT_PULLUP
+#define HOLD_WAKE_PIN_PULLUP_IN_SLEEP
 #elif defined(BOARD_WAVESHARE_ESP32_DRIVER)
 #define PIN_INTERRUPT 33
 #define DEVICE_MODEL  "waveshare"
@@ -171,11 +180,19 @@
 #define PIN_BATTERY 1
 #elif defined(BOARD_XTEINK_X4)
 #define PIN_BATTERY 0
+#elif defined(BOARD_FIREBEETLE2_ESP32E)
+#define PIN_BATTERY 34 // A2 / GPIO34, on-board 1:1 divider (matches ADCBattery x2 scaling)
 #else
 #define PIN_BATTERY 3
 #endif
 
 // #define FAKE_BATTERY_VOLTAGE // Uncomment to report 4.2V instead of reading ADC
+
+// Pin mode used when reading the wake/refresh button. Boards whose button has
+// no external pull-up override this to INPUT_PULLUP (see BOARD_FIREBEETLE2_ESP32E).
+#ifndef BUTTON_PIN_MODE
+#define BUTTON_PIN_MODE INPUT
+#endif
 
 #define BUTTON_HOLD_TIME                   5000
 #define BUTTON_MEDIUM_HOLD_TIME            1000

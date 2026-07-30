@@ -12,6 +12,9 @@
 #include <WifiCaptive.h>
 #include <pins.h>
 #include <config.h>
+#ifdef HOLD_WAKE_PIN_PULLUP_IN_SLEEP
+#include "driver/rtc_io.h"
+#endif
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <display.h>
@@ -866,6 +869,11 @@ void bl_init(void)
   }
   Log.info("%s [%d]: modem needed = %d\n\r", __FILE__, __LINE__, bModemNeeded);
 #endif // X
+#ifdef HOLD_WAKE_PIN_PULLUP_IN_SLEEP
+  // Release the deep-sleep RTC hold on the wake pin so pins_init()/button reads
+  // can reconfigure it (the hold is re-applied before the next deep sleep).
+  rtc_gpio_hold_dis((gpio_num_t)PIN_INTERRUPT);
+#endif
   pins_init();
   buzzer().init();
   sensor_init();
@@ -3152,6 +3160,13 @@ void goToSleep(void)
 #if CONFIG_IDF_TARGET_ESP32
   #define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)  // 2 ^ GPIO_NUMBER in hex
   esp_sleep_enable_ext1_wakeup(BUTTON_PIN_BITMASK(PIN_INTERRUPT), ESP_EXT1_WAKEUP_ALL_LOW);
+#ifdef HOLD_WAKE_PIN_PULLUP_IN_SLEEP
+  // Retain the wake pin's pull-up during deep sleep so a pin with no external
+  // pull-up stays HIGH and only a real (LOW) button press wakes the device.
+  rtc_gpio_pullup_en((gpio_num_t)PIN_INTERRUPT);
+  rtc_gpio_pulldown_dis((gpio_num_t)PIN_INTERRUPT);
+  rtc_gpio_hold_en((gpio_num_t)PIN_INTERRUPT);
+#endif
 #elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined (CONFIG_IDF_TARGET_ESP32C5)
   pinMode(PIN_INTERRUPT, INPUT); // needed to not immediately wake up
   esp_deep_sleep_enable_gpio_wakeup(1 << PIN_INTERRUPT, ESP_GPIO_WAKEUP_GPIO_LOW);
@@ -3188,6 +3203,12 @@ static void goToSleepButtonOnly(void)
 #if CONFIG_IDF_TARGET_ESP32
   #define BUTTON_PIN_BITMASK_BTN(GPIO) (1ULL << GPIO)
   esp_sleep_enable_ext1_wakeup(BUTTON_PIN_BITMASK_BTN(PIN_INTERRUPT), ESP_EXT1_WAKEUP_ALL_LOW);
+#ifdef HOLD_WAKE_PIN_PULLUP_IN_SLEEP
+  // Retain the wake pin's pull-up during deep sleep (see goToSleep()).
+  rtc_gpio_pullup_en((gpio_num_t)PIN_INTERRUPT);
+  rtc_gpio_pulldown_dis((gpio_num_t)PIN_INTERRUPT);
+  rtc_gpio_hold_en((gpio_num_t)PIN_INTERRUPT);
+#endif
 #elif defined( CONFIG_IDF_TARGET_ESP32C3 ) || defined ( CONFIG_IDF_TARGET_ESP32C5 )
   esp_deep_sleep_enable_gpio_wakeup(1 << PIN_INTERRUPT, ESP_GPIO_WAKEUP_GPIO_LOW);
 #elif CONFIG_IDF_TARGET_ESP32S3
