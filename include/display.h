@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #ifndef _NO_DEV_CONFIG_
-#include "DEV_Config.h"
+#include "config.h"
 #endif
 
 enum MSG {
@@ -15,15 +15,12 @@ enum MSG {
   MODEM_FLASH_FAILED,
   READY_TO_SHIP,
   SHIPPING_MODE,
-  WIFI_RESET_CONFIRM,
-  POWER_OFF_CONFIRM,
   WIFI_CONNECT,
   WIFI_FAILED,
   WIFI_WEAK,
   WIFI_INTERNAL_ERROR,
   WIFI_IMAGE_TIMEOUT,
   API_ERROR,
-  API_REQUEST_FAILED,
   API_SIZE_ERROR,
   API_UNABLE_TO_CONNECT,
   API_SETUP_FAILED,
@@ -40,6 +37,7 @@ enum MSG {
   FILL_WHITE,
   WIFI_RETRY_LIMIT,
   CAPTIVE_WIFI_TIMEOUT,
+  IMAGE_DOWNLOAD_FAILED,
 };
 
 typedef struct dp_tag {
@@ -58,6 +56,12 @@ typedef struct theBrand {
  * @return none
  */
 void display_init(void);
+
+/**
+ * @brief Panel ID (EPD revision) as 8 hex digits for the Panel-Rev request header
+ * @return hex string, or empty if the ID is unknown/not read
+ */
+String display_panel_rev_string(void);
 
 uint8_t tca9535_interrupt_clear();
 void config_bma530_interrupt();
@@ -125,8 +129,8 @@ uint16_t display_width();
  * @param is_center_aligned If true, center the text; if false, left-align
  * @return none
  */
-void Paint_DrawMultilineText(UWORD x_start, UWORD y_start, const char *message, uint16_t max_width, uint16_t font_width,
-                             UWORD color_fg, UWORD color_bg, const void *font, bool is_center_aligned);
+void Paint_DrawMultilineText(UWORD x_start, UWORD y_start, const char *message, uint16_t max_width, UWORD color_fg,
+                             UWORD color_bg, const void *font);
 
 /**
  * @brief Function to show the image on the display
@@ -174,15 +178,28 @@ void display_show_msg(uint8_t *image_buffer, MSG message_type, String friendly_i
  */
 void display_show_msg_api(uint8_t *image_buffer, String message);
 
-void display_show_msg_qa(uint8_t *image_buffer, const float *voltage, const float *temperature, bool qa_result);
+void display_show_msg_qa(const float *voltage, const float *temperature, bool qa_result);
+
+// Draws a black indicator in a white border above the touched region of the touch bar (TRMNL X):
+// an arrow pointing left or right at the sides, a pill in the middle
+void display_draw_touchbar_indicator(touchbar_side_t side);
+
+// Fills a pill (a rectangle whose left and right ends are half circles) in the image buffer
+void display_fill_pill(int x, int y, int w, int h, uint8_t color);
+
+// The battery icon (TRMNL X), DISPLAY_BATTERY_ICON_W x DISPLAY_BATTERY_ICON_H, drawn in the image
+// buffer with its top left at (x, y): charging while on USB power, otherwise the charge level from
+// the fuel gauge's last reading (battery().gaugeInit()), or a cross when there is none
+#define DISPLAY_BATTERY_ICON_W      124
+#define DISPLAY_BATTERY_ICON_H      74
+#define DISPLAY_BATTERY_ICON_MARGIN 40 // from the top and right edges, where the screens put it
+void display_draw_battery_icon(int x, int y);
 
 /**
  * @brief Enable or disable light sleep at runtime
  * @param enabled true to enable light sleep, false to disable
  * @return none
  */
-void display_draw_touchbar_indicator(touchbar_side_t side, bool filled);
-
 void display_set_light_sleep(uint8_t enabled);
 
 /**
@@ -191,5 +208,12 @@ void display_set_light_sleep(uint8_t enabled);
  * @return none
  */
 void display_sleep(void);
+
+/**
+ * @brief Function to wipe the display
+ * @param none
+ * @return none
+ */
+void display_wipe(void);
 
 #endif
